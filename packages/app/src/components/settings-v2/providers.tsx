@@ -169,7 +169,7 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
                         </div>
                         <Show when={item.options?.email}>
                           <span class="text-[11px] text-text-weak truncate leading-none mt-1">
-                            {item.options.name ? `${item.options.name} (${item.options.email})` : item.options.email}
+                            {item.options.name ? `${item.options.name as string} (${item.options.email as string})` : (item.options.email as string)}
                           </span>
                         </Show>
                       </div>
