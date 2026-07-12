@@ -5,6 +5,9 @@ export const PUBLIC_UI_PATHS = new Set<string>([
   "/site.webmanifest",
   "/web-app-manifest-192x192.png",
   "/web-app-manifest-512x512.png",
+  // OAuth callback endpoints — Google redirects here after user consent.
+  // Must be accessible without Basic Auth credentials.
+  "/auth/gemini-callback",
 ])
 
 export function isPublicUIPath(method: string, pathname: string) {

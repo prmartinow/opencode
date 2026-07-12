@@ -162,9 +162,16 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
                         height={PROVIDER_ICON_SIZE}
                         class="settings-v2-provider-icon shrink-0"
                       />
-                      <div class="settings-v2-provider-main">
-                        <span class="settings-v2-provider-name truncate">{item.name}</span>
-                        <Tag>{type(item)}</Tag>
+                      <div class="settings-v2-provider-main flex flex-col min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="settings-v2-provider-name truncate">{item.name}</span>
+                          <Tag>{type(item)}</Tag>
+                        </div>
+                        <Show when={item.options?.email}>
+                          <span class="text-[11px] text-text-weak truncate leading-none mt-1">
+                            {item.options.name ? `${item.options.name} (${item.options.email})` : item.options.email}
+                          </span>
+                        </Show>
                       </div>
                     </div>
                     <Show

@@ -42,8 +42,91 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       const all = yield* ModelsDev.Service.use((s) => s.get())
       const disabled = new Set(config.disabled_providers ?? [])
       const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
-      const filtered: Record<string, (typeof all)[string]> = {}
-      for (const [key, value] of Object.entries(all)) {
+      const geminiBase = {
+        id: "gemini",
+        name: "Gemini",
+        env: [],
+        npm: "@ai-sdk/google",
+        models: {
+          "gemini-3.5-flash": {
+            id: "gemini-3.5-flash",
+            name: "Gemini 3.5 Flash",
+            family: "gemini-3.5-flash",
+            release_date: "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 1048576, output: 65535 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          },
+          "gemini-3.1-pro": {
+            id: "gemini-3.1-pro",
+            name: "Gemini 3.1 Pro",
+            family: "gemini-3.1-pro",
+            release_date: "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 1048576, output: 65535 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          },
+          "claude-sonnet-4-6": {
+            id: "claude-sonnet-4-6",
+            name: "Claude Sonnet 4.6 (Thinking)",
+            family: "claude-sonnet-4-6",
+            release_date: "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 200000, output: 8192 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          },
+          "claude-opus-4-6-thinking": {
+            id: "claude-opus-4-6-thinking",
+            name: "Claude Opus 4.6 (Thinking)",
+            family: "claude-opus-4-6-thinking",
+            release_date: "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 200000, output: 4096 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          },
+          "gpt-oss-120b-medium": {
+            id: "gpt-oss-120b-medium",
+            name: "GPT-OSS 120B (Medium)",
+            family: "gpt-oss-120b-medium",
+            release_date: "",
+            attachment: true,
+            reasoning: false,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 128000, output: 4096 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          }
+        }
+      } as any
+
+      const extendedAll: Record<string, any> = {
+        ...all,
+        gemini: geminiBase,
+        "gemini-2": { ...geminiBase, id: "gemini-2", name: "Gemini (Account 2)" },
+        "gemini-3": { ...geminiBase, id: "gemini-3", name: "Gemini (Account 3)" },
+        "gemini-4": { ...geminiBase, id: "gemini-4", name: "Gemini (Account 4)" },
+        "gemini-5": { ...geminiBase, id: "gemini-5", name: "Gemini (Account 5)" },
+      }
+
+      const filtered: Record<string, any> = {}
+      for (const [key, value] of Object.entries(extendedAll)) {
         if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) filtered[key] = value
       }
       const connected = yield* provider.list()

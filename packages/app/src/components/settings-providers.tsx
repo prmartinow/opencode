@@ -168,8 +168,17 @@ const SettingsProvidersContent: Component<{ onBack?: () => void }> = (props) => 
                   <div class="group flex flex-wrap items-center justify-between gap-4 min-h-16 py-3 border-b border-border-weak-base last:border-none">
                     <div class="flex items-center gap-3 min-w-0">
                       <ProviderIcon id={item.id} class="size-5 shrink-0 icon-strong-base" />
-                      <span class="text-14-medium text-text-strong truncate">{item.name}</span>
-                      <Tag>{type(item)}</Tag>
+                      <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="text-14-medium text-text-strong truncate">{item.name}</span>
+                          <Tag>{type(item)}</Tag>
+                        </div>
+                        <Show when={item.options?.email}>
+                          <span class="text-12-regular text-text-weak truncate">
+                            {item.options.name ? `${item.options.name} (${item.options.email})` : item.options.email}
+                          </span>
+                        </Show>
+                      </div>
                     </div>
                     <Show
                       when={canDisconnect(item)}

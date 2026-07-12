@@ -674,6 +674,27 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
   if (!model.capabilities.reasoning) return {}
 
   const id = model.id.toLowerCase()
+  if (model.providerID.startsWith("gemini")) {
+    if (id.includes("gemini-3.5-flash")) {
+      return {
+        low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
+        medium: { thinkingConfig: { includeThoughts: true, thinkingLevel: "medium" } },
+        high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
+      }
+    }
+    if (id.includes("gemini-3.1-pro")) {
+      return {
+        low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
+        high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
+      }
+    }
+    if (id.includes("claude-sonnet-4-6") || id.includes("claude-opus-4-6-thinking")) {
+      return {
+        low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
+        high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
+      }
+    }
+  }
   const glm52 = ["glm-5.2", "glm-5-2", "glm-5p2"].some(
     (name) => id.includes(name) || model.api.id.toLowerCase().includes(name),
   )

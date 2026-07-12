@@ -115,6 +115,7 @@ import { corsVaryFix } from "./middleware/cors-vary"
 import { errorLayer } from "./middleware/error"
 import { fenceLayer } from "./middleware/fence"
 import { schemaErrorLayer } from "./middleware/schema-error"
+import { handleGeminiOAuthCallback } from "@/plugin/google/gemini"
 
 export const context = Context.makeUnsafe<unknown>(new Map())
 
@@ -190,6 +191,23 @@ const docResponse = lazy(() => HttpServerResponse.jsonUnsafe(OpenApi.fromApi(Pub
 const docRoute = HttpRouter.use((router) => router.add("GET", "/doc", () => Effect.succeed(docResponse()))).pipe(
   Layer.provide(authOnlyRouterLayer),
 )
+
+// Unauthenticated route that receives the Google OAuth redirect callback.
+// No auth middleware needed — this is a browser redirect from accounts.google.com.
+const geminiCallbackRoute = HttpRouter.use((router) =>
+  Effect.gen(function* () {
+    yield* router.add("GET", "/auth/gemini-callback", (request) => {
+      const url = new URL(request.url, "http://localhost")
+      const result = handleGeminiOAuthCallback(url.searchParams)
+      return Effect.succeed(
+        HttpServerResponse.text(result.html, {
+          status: result.status,
+          contentType: "text/html; charset=utf-8",
+        }),
+      )
+    })
+  }),
+).pipe(Layer.provide(authOnlyRouterLayer))
 
 const uiRoute = HttpRouter.use((router) =>
   Effect.gen(function* () {
@@ -280,6 +298,7 @@ export function createRoutes(
     instanceRoutes,
     serverRoutes,
     docRoute,
+    geminiCallbackRoute,
     uiRoute,
   ).pipe(
     Layer.provide([
