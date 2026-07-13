@@ -172,6 +172,34 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
                             {item.options.name ? `${item.options.name as string} (${item.options.email as string})` : (item.options.email as string)}
                           </span>
                         </Show>
+                        <Show when={item.id.startsWith("gemini") && (item.options as any)?.usage?.groups}>
+                          <div class="mt-2 flex flex-col gap-2 border-t border-border-muted pt-2 max-w-md">
+                            <For each={(item.options as any).usage.groups}>
+                              {(group: any) => (
+                                <div class="flex flex-col gap-1 text-[11px]">
+                                  <span class="font-semibold text-text-base">{group.displayName}</span>
+                                  <div class="flex flex-col gap-1 pl-1 text-text-muted">
+                                    <For each={group.buckets}>
+                                      {(bucket: any) => (
+                                        <Show when={!bucket.disabled}>
+                                          <div class="flex items-center gap-1.5">
+                                            <span class="font-medium text-text-muted">{bucket.displayName}:</span>
+                                            <span style={{ color: bucket.remainingFraction === 0 ? "var(--v2-state-fg-danger, #ef4444)" : "var(--v2-state-fg-success, #10b981)", "font-weight": "500" }}>
+                                              {(bucket.remainingFraction * 100).toFixed(1)}% left
+                                            </span>
+                                            <span class="text-text-faint text-[10px]">
+                                              ({formatResetTime(bucket.resetTime)})
+                                            </span>
+                                          </div>
+                                        </Show>
+                                      )}
+                                    </For>
+                                  </div>
+                                </div>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
                       </div>
                     </div>
                     <Show
@@ -258,7 +286,20 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
             {language.t("dialog.provider.viewAll")}
           </button>
         </div>
-      </div>
-    </>
-  )
+    </div>
+  </>
+)
+}
+
+function formatResetTime(resetTimeStr: string): string {
+const diff = new Date(resetTimeStr).getTime() - Date.now()
+if (diff <= 0) return "resets now"
+const minutes = Math.floor(diff / 60000) % 60
+const hours = Math.floor(diff / 3600000) % 24
+const days = Math.floor(diff / 86400000)
+const parts = []
+if (days > 0) parts.push(`${days}d`)
+if (hours > 0 || days > 0) parts.push(`${hours}h`)
+if (days === 0 && minutes > 0) parts.push(`${minutes}m`)
+return `resets in ${parts.join(" ")}`
 }

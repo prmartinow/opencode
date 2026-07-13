@@ -204,6 +204,27 @@ interface PendingOAuth {
 // State keyed by OAuth `state` param so multiple concurrent providers work.
 const pendingOAuthMap = new Map<string, PendingOAuth>()
 
+// Pending quota summary fetches to prevent concurrent requests for the same token.
+const pendingQuotaFetches = new Set<string>()
+
+async function fetchUserQuotaSummary(accessToken: string): Promise<any> {
+  const response = await fetch("https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "AntigravityCLI/1.0.16/auto (linux; amd64; terminal)",
+      "Authorization": `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      project: "default-cli-project",
+    }),
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to fetch quota summary: ${response.status} ${await response.text()}`)
+  }
+  return response.json()
+}
+
 /**
  * Returns the base URL of the opencode server for OAuth redirect_uri.
  * Google OAuth 2.0 forbids private/internal LAN IP addresses (like 192.168.2.251)
@@ -424,12 +445,48 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
           }
         }
 
-        let refreshPromise: Promise<{ access: string }> | undefined
+        if (activeAccess && auth.refresh) {
+      const lastFetched = (auth as any).usage?.lastFetched || 0
+      const now = Date.now()
+      if (now - lastFetched > 15000 && !pendingQuotaFetches.has(activeAccess)) {
+        pendingQuotaFetches.add(activeAccess)
+        fetchUserQuotaSummary(activeAccess)
+          .then(async (summary) => {
+            const latestAuth = await getAuth()
+            if (latestAuth.type === "oauth" && latestAuth.access === activeAccess) {
+              await input.client.auth.set({
+                path: { id: providerName },
+                body: {
+                  type: "oauth",
+                  refresh: latestAuth.refresh,
+                  access: latestAuth.access,
+                  expires: latestAuth.expires,
+                  email: (latestAuth as any).email || "",
+                  name: (latestAuth as any).name || "",
+                  usage: {
+                    lastFetched: Date.now(),
+                    groups: summary.groups || [],
+                  },
+                } as any,
+              })
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to fetch user quota summary in loader background task:", err)
+          })
+          .finally(() => {
+            pendingQuotaFetches.delete(activeAccess)
+          })
+      }
+    }
 
-        return {
-          apiKey: OAUTH_DUMMY_KEY,
-          email,
-          name,
+    let refreshPromise: Promise<{ access: string }> | undefined
+
+    return {
+      apiKey: OAUTH_DUMMY_KEY,
+      email,
+      name,
+      usage: (auth as any).usage,
           async fetch(requestInput: RequestInfo | URL, init?: RequestInit) {
             // Clean key query parameter from URL if present
             let finalInput = requestInput
