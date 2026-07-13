@@ -32,6 +32,59 @@ import { handleDocumentSearchKeydown } from "@/utils/search-keydown"
 import { createEventListener } from "@solid-primitives/event-listener"
 import { matchesModelSearch } from "./dialog-select-model-search"
 
+export const getQuotaForModel = (providerOptions: any, modelID: string) => {
+  const usage = providerOptions?.usage
+  if (!usage || !usage.groups) return undefined
+
+  const isGemini = modelID.toLowerCase().includes("gemini")
+  const targetGroup = usage.groups.find((g: any) => {
+    const name = (g.displayName || "").toLowerCase()
+    const desc = (g.description || "").toLowerCase()
+    if (isGemini) {
+      return name.includes("gemini") || desc.includes("gemini")
+    } else {
+      return (
+        name.includes("claude") ||
+        name.includes("gpt") ||
+        desc.includes("claude") ||
+        desc.includes("gpt")
+      )
+    }
+  })
+
+  if (!targetGroup || !targetGroup.buckets) return undefined
+
+  const weekly = targetGroup.buckets.find((b: any) => b.window === "weekly")
+  const fiveHour = targetGroup.buckets.find((b: any) => b.window === "5h")
+
+  return { weekly, fiveHour }
+}
+
+export const ModelQuotaBadge: Component<{ providerOptions: any; modelID: string; v2?: boolean }> = (props) => {
+  const quota = createMemo(() => getQuotaForModel(props.providerOptions, props.modelID))
+
+  return (
+    <Show when={quota()}>
+      {(q) => {
+        const weeklyPct = Math.round((q().weekly?.remainingFraction ?? 0) * 1000) / 10
+        const fiveHourPct = Math.round((q().fiveHour?.remainingFraction ?? 0) * 100)
+
+        return (
+          <span
+            class="ml-auto shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded leading-none"
+            classList={{
+              "bg-v2-background-bg-layer-02 border border-v2-border-border-muted text-v2-text-text-muted": props.v2,
+              "bg-surface-raised-base border border-border-base text-text-muted": !props.v2,
+            }}
+          >
+            {weeklyPct}% w · {fiveHourPct}% 5h
+          </span>
+        )
+      }}
+    </Show>
+  )
+}
+
 const isFree = (provider: string, cost: { input: number } | undefined) =>
   provider === "opencode" && (!cost || cost.input === 0)
 
@@ -109,6 +162,7 @@ const ModelList: Component<{
       {(i) => (
         <div class="w-full flex items-center gap-x-2 text-13-regular">
           <span class="truncate">{i.name}</span>
+          <ModelQuotaBadge providerOptions={i.provider.options} modelID={i.id} />
           <Show when={isFree(i.provider.id, i.cost)}>
             <Tag>{language.t("model.tag.free")}</Tag>
           </Show>
@@ -475,6 +529,7 @@ export function ModelSelectorPopoverV2(props: {
                                 onSelect={() => selectModel(item)}
                               >
                                 <span class="min-w-0 truncate leading-5">{item.name}</span>
+                                <ModelQuotaBadge providerOptions={item.provider.options} modelID={item.id} v2 />
                                 <Show when={isFree(item.provider.id, item.cost)}>
                                   <TagV2 class="shrink-0">{language.t("model.tag.free")}</TagV2>
                                 </Show>

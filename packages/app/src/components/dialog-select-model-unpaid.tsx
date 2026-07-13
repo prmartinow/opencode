@@ -11,6 +11,7 @@ import { popularProviders, useProviders } from "@/hooks/use-providers"
 import { ModelTooltip } from "./model-tooltip"
 import { useLanguage } from "@/context/language"
 import { decode64 } from "@/utils/base64"
+import { ModelQuotaBadge } from "./dialog-select-model"
 
 type ModelState = ReturnType<typeof useLocal>["model"]
 
@@ -78,6 +79,7 @@ export const DialogSelectModelUnpaid: Component<{ model?: ModelState }> = (props
           {(i) => (
             <div class="w-full flex items-center gap-x-2.5">
               <span>{i.name}</span>
+              <ModelQuotaBadge providerOptions={i.provider.options} modelID={i.id} />
               <Tag>{language.t("model.tag.free")}</Tag>
               <Show when={i.latest}>
                 <Tag>{language.t("model.tag.latest")}</Tag>
