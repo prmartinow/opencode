@@ -30,6 +30,7 @@ export async function getCredentials(): Promise<GeminiCredentials> {
   try {
     const fs = await import("node:fs")
     const path = await import("node:path")
+    const os = await import("node:os")
     const { execSync } = await import("node:child_process")
     const { Buffer } = await import("node:buffer")
 
@@ -38,7 +39,7 @@ export async function getCredentials(): Promise<GeminiCredentials> {
       if (envPath && fs.existsSync(envPath)) return envPath
 
       const commonPaths = [
-        path.join(process.env.HOME || "/home/ops", ".local/bin/agy"),
+        path.join(os.homedir(), ".local/bin/agy"),
         "/usr/local/bin/agy",
         "/usr/bin/agy",
       ]
@@ -301,8 +302,9 @@ export async function tryLoadAgyToken(): Promise<AgyTokenCredentials | null> {
   try {
     const fs = await import("node:fs")
     const path = await import("node:path")
+    const os = await import("node:os")
     
-    const tokenPath = process.env.OPENCODE_AGY_TOKEN_PATH || path.join(process.env.HOME || "/home/ops", ".gemini/antigravity-cli/antigravity-oauth-token")
+    const tokenPath = process.env.OPENCODE_AGY_TOKEN_PATH || path.join(os.homedir(), ".gemini/antigravity-cli/antigravity-oauth-token")
     if (!fs.existsSync(tokenPath)) {
       return null
     }
