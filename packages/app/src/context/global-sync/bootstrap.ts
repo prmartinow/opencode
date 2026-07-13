@@ -182,6 +182,7 @@ export const loadProvidersQuery = (scope: ServerScope, directory: string | null,
   queryOptions({
     queryKey: [scope, directory, "providers"],
     queryFn: () => retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!))),
+    refetchInterval: 30000,
   })
 
 export const loadAgentsQuery = (scope: ServerScope, directory: string | null, sdk: OpencodeClient) =>

@@ -162,8 +162,8 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
                         height={PROVIDER_ICON_SIZE}
                         class="settings-v2-provider-icon shrink-0"
                       />
-                      <div class="settings-v2-provider-main flex flex-col min-w-0">
-                        <div class="flex items-center gap-2">
+                      <div class="settings-v2-provider-copy">
+                        <div class="settings-v2-provider-main">
                           <span class="settings-v2-provider-name truncate">{item.name}</span>
                           <Tag>{type(item)}</Tag>
                         </div>
@@ -173,16 +173,16 @@ export const SettingsProvidersV2: Component<{ onBack?: () => void }> = (props) =
                           </span>
                         </Show>
                         <Show when={item.id.startsWith("gemini") && (item.options as any)?.usage?.groups}>
-                          <div class="mt-2 flex flex-col gap-2 border-t border-border-muted pt-2 max-w-md">
+                          <div class="mt-2 flex flex-col gap-2 border-t border-border-muted pt-2 max-w-md w-full">
                             <For each={(item.options as any).usage.groups}>
                               {(group: any) => (
-                                <div class="flex flex-col gap-1 text-[11px]">
-                                  <span class="font-semibold text-text-base">{group.displayName}</span>
-                                  <div class="flex flex-col gap-1 pl-1 text-text-muted">
+                                <div class="flex flex-col gap-1 text-[11px] items-start text-left">
+                                  <span class="font-semibold text-text-base text-left">{group.displayName}</span>
+                                  <div class="flex flex-col gap-1 pl-1 text-text-muted text-left items-start">
                                     <For each={group.buckets}>
                                       {(bucket: any) => (
                                         <Show when={!bucket.disabled}>
-                                          <div class="flex items-center gap-1.5">
+                                          <div class="flex items-center gap-1.5 text-left">
                                             <span class="font-medium text-text-muted">{bucket.displayName}:</span>
                                             <span style={{ color: bucket.remainingFraction === 0 ? "var(--v2-state-fg-danger, #ef4444)" : "var(--v2-state-fg-success, #10b981)", "font-weight": "500" }}>
                                               {(bucket.remainingFraction * 100).toFixed(1)}% left
