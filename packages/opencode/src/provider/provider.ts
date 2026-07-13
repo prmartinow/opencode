@@ -1754,7 +1754,26 @@ const layer = Layer.effect(
       }),
     )
 
-    const list = Effect.fn("Provider.list")(() => InstanceState.use(state, (s) => s.providers))
+    const list = Effect.fn("Provider.list")(function* () {
+      const s = yield* InstanceState.get(state)
+      const auths = yield* auth.all().pipe(Effect.orDie)
+      const mergedProviders: Record<ProviderV2.ID, Info> = { ...s.providers }
+      for (const [id, provider] of Object.entries(mergedProviders)) {
+        const stored = auths[id]
+        if (stored && stored.type === "oauth") {
+          mergedProviders[id as ProviderV2.ID] = {
+            ...provider,
+            options: {
+              ...provider.options,
+              email: (stored as any).email || "",
+              name: (stored as any).name || "",
+              usage: (stored as any).usage,
+            },
+          }
+        }
+      }
+      return mergedProviders
+    })
 
     async function resolveSDK(model: Model, s: State, envs: Record<string, string | undefined>) {
       try {
