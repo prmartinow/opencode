@@ -456,39 +456,45 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
         }
 
         if (activeAccess && auth.refresh) {
-      const lastFetched = (auth as any).usage?.lastFetched || 0
-      const now = Date.now()
-      if (now - lastFetched > 15000 && !pendingQuotaFetches.has(activeAccess)) {
-        pendingQuotaFetches.add(activeAccess)
-        fetchUserQuotaSummary(activeAccess)
-          .then(async (summary) => {
-            const latestAuth = await getAuth()
-            if (latestAuth.type === "oauth" && latestAuth.access === activeAccess) {
-              await input.client.auth.set({
-                path: { id: providerName },
-                body: {
-                  type: "oauth",
-                  refresh: latestAuth.refresh,
-                  access: latestAuth.access,
-                  expires: latestAuth.expires,
-                  email: (latestAuth as any).email || "",
-                  name: (latestAuth as any).name || "",
-                  usage: {
-                    lastFetched: Date.now(),
-                    groups: summary.groups || [],
-                  },
-                } as any,
+          const lastFetched = (auth as any).usage?.lastFetched || 0
+          const now = Date.now()
+          if (now - lastFetched > 15000 && !pendingQuotaFetches.has(activeAccess)) {
+            pendingQuotaFetches.add(activeAccess)
+            console.log(`[Gemini Quota ${providerName}] Triggering fetch for activeAccess: ${activeAccess.substring(0, 20)}...`)
+            fetchUserQuotaSummary(activeAccess)
+              .then(async (summary) => {
+                console.log(`[Gemini Quota ${providerName}] Fetch successful. Groups count:`, summary?.groups?.length)
+                const latestAuth = await getAuth()
+                console.log(`[Gemini Quota ${providerName}] Comparison - activeAccess: ${activeAccess.substring(0, 20)}..., latestAuth.access: ${(latestAuth as any).access?.substring(0, 20)}...`)
+                if (latestAuth.type === "oauth" && latestAuth.access === activeAccess) {
+                  await input.client.auth.set({
+                    path: { id: providerName },
+                    body: {
+                      type: "oauth",
+                      refresh: latestAuth.refresh,
+                      access: latestAuth.access,
+                      expires: latestAuth.expires,
+                      email: (latestAuth as any).email || "",
+                      name: (latestAuth as any).name || "",
+                      usage: {
+                        lastFetched: Date.now(),
+                        groups: summary.groups || [],
+                      },
+                    } as any,
+                  })
+                  console.log(`[Gemini Quota ${providerName}] Successfully saved usage to client auth database.`)
+                } else {
+                  console.log(`[Gemini Quota ${providerName}] Access token mismatch or not oauth. Not saving.`)
+                }
               })
-            }
-          })
-          .catch((err) => {
-            console.error("Failed to fetch user quota summary in loader background task:", err)
-          })
-          .finally(() => {
-            pendingQuotaFetches.delete(activeAccess)
-          })
-      }
-    }
+              .catch((err) => {
+                console.error(`[Gemini Quota ${providerName}] Failed to fetch user quota summary:`, err)
+              })
+              .finally(() => {
+                pendingQuotaFetches.delete(activeAccess)
+              })
+          }
+        }
 
     let refreshPromise: Promise<{ access: string }> | undefined
 
