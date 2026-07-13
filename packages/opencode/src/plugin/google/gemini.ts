@@ -369,6 +369,77 @@ export async function tryLoadAgyToken(): Promise<AgyTokenCredentials | null> {
 
 export async function GeminiAuthPlugin(input: PluginInput, options?: Record<string, unknown>): Promise<Hooks> {
   const providerName = (typeof options?.providerName === "string" ? options.providerName : undefined) ?? "gemini"
+
+  // Start background interval to refresh usage data every 30 seconds
+  setInterval(async () => {
+    try {
+      let auth = await (input as any).getAuth(providerName)
+      if (!auth || auth.type !== "oauth") return
+
+      let activeAccess = auth.access
+      let expires = auth.expires
+
+      // 1. Refresh token if expired
+      if (auth.refresh && (!activeAccess || expires < Date.now())) {
+        try {
+          const tokens = await refreshAccessToken(auth.refresh)
+          activeAccess = tokens.access_token
+          expires = Date.now() + (tokens.expires_in ?? 3600) * 1000
+          
+          await input.client.auth.set({
+            path: { id: providerName },
+            body: {
+              type: "oauth",
+              refresh: tokens.refresh_token || auth.refresh,
+              access: activeAccess,
+              expires,
+              email: (auth as any).email || "",
+              name: (auth as any).name || "",
+              usage: (auth as any).usage,
+            } as any,
+          })
+        } catch (e) {
+          console.error(`[Gemini Quota Background ${providerName}] Failed to refresh token:`, e)
+          return
+        }
+      }
+
+      // 2. Fetch quota summary if 30s has passed since lastFetched
+      const lastFetched = (auth as any).usage?.lastFetched || 0
+      const now = Date.now()
+      if (activeAccess && now - lastFetched > 30000 && !pendingQuotaFetches.has(activeAccess)) {
+        pendingQuotaFetches.add(activeAccess)
+        try {
+          const summary = await fetchUserQuotaSummary(activeAccess)
+          const latestAuth = await (input as any).getAuth(providerName)
+          if (latestAuth && latestAuth.type === "oauth" && latestAuth.access === activeAccess) {
+            await input.client.auth.set({
+              path: { id: providerName },
+              body: {
+                type: "oauth",
+                refresh: latestAuth.refresh,
+                access: latestAuth.access,
+                expires: latestAuth.expires,
+                email: (latestAuth as any).email || "",
+                name: (latestAuth as any).name || "",
+                usage: {
+                  lastFetched: Date.now(),
+                  groups: summary.groups || [],
+                },
+              } as any,
+            })
+          }
+        } catch (err) {
+          console.error(`[Gemini Quota Background ${providerName}] Failed to fetch user quota summary:`, err)
+        } finally {
+          pendingQuotaFetches.delete(activeAccess)
+        }
+      }
+    } catch (e) {
+      // Quietly ignore background errors
+    }
+  }, 30000)
+
   return {
     auth: {
       provider: providerName,

@@ -22,6 +22,7 @@ import { DigitalOceanAuthPlugin } from "./digitalocean"
 import { XaiAuthPlugin } from "./xai"
 import { SnowflakeCortexAuthPlugin } from "./snowflake-cortex"
 import { Effect, Layer, Context } from "effect"
+import { Auth } from "../auth"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
 import { errorMessage } from "@/util/error"
@@ -131,6 +132,7 @@ const layer = Layer.effect(
   Effect.gen(function* () {
     const events = yield* EventV2Bridge.Service
     const config = yield* Config.Service
+    const auth = yield* Auth.Service
     const flags = yield* RuntimeFlags.Service
 
     const state = yield* InstanceState.make<State>(
@@ -165,6 +167,7 @@ const layer = Layer.effect(
           get serverUrl(): URL {
             return Server.url ?? new URL("http://localhost:4096")
           },
+          getAuth: (id: string) => bridge.promise(auth.get(id).pipe(Effect.orDie)),
           // @ts-expect-error
           $: typeof Bun === "undefined" ? undefined : Bun.$,
         }
@@ -314,7 +317,7 @@ const layer = Layer.effect(
 export const node = LayerNode.make({
   service: Service,
   layer: layer,
-  deps: [EventV2Bridge.node, Config.node, RuntimeFlags.node],
+  deps: [EventV2Bridge.node, Config.node, RuntimeFlags.node, Auth.node],
 })
 
 export * as Plugin from "."
