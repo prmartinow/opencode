@@ -400,48 +400,58 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
         let name = (auth as any).name
         let activeAccess = auth.access
 
-        if (!email && auth.refresh) {
-          // If the token is expired, refresh it first so we can fetch userinfo!
-          if (!activeAccess || auth.expires < Date.now()) {
-            try {
-              const tokens = await refreshAccessToken(auth.refresh)
-              activeAccess = tokens.access_token
-              auth.access = tokens.access_token
-              auth.expires = Date.now() + (tokens.expires_in ?? 3600) * 1000
-              if (tokens.refresh_token) {
-                auth.refresh = tokens.refresh_token
-              }
-            } catch (e) {
-              console.error("Failed to refresh token during loader email fetch:", e)
+        if (auth.refresh && (!activeAccess || auth.expires < Date.now())) {
+          try {
+            const tokens = await refreshAccessToken(auth.refresh)
+            activeAccess = tokens.access_token
+            auth.access = tokens.access_token
+            auth.expires = Date.now() + (tokens.expires_in ?? 3600) * 1000
+            if (tokens.refresh_token) {
+              auth.refresh = tokens.refresh_token
             }
+            await input.client.auth.set({
+              path: { id: providerName },
+              body: {
+                type: "oauth",
+                refresh: auth.refresh,
+                access: auth.access,
+                expires: auth.expires,
+                email: (auth as any).email || "",
+                name: (auth as any).name || "",
+                usage: (auth as any).usage || undefined,
+              } as any,
+            })
+          } catch (e) {
+            console.error("Failed to refresh token during loader init:", e)
           }
+        }
 
-          if (activeAccess) {
-            try {
-              const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                headers: { "Authorization": `Bearer ${activeAccess}` }
-              })
-              if (res.ok) {
-                const info = await res.json() as any
-                email = info.email || ""
-                name = info.name || ""
-                if (email) {
-                  await input.client.auth.set({
-                    path: { id: providerName },
-                    body: {
-                      type: "oauth",
-                      refresh: auth.refresh,
-                      access: auth.access,
-                      expires: auth.expires,
-                      email,
-                      name,
-                    } as any,
-                  })
-                }
+        if (!email && activeAccess) {
+          try {
+            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+              headers: { "Authorization": `Bearer ${activeAccess}` }
+            })
+            if (res.ok) {
+              const info = await res.json() as any
+              email = info.email || ""
+              name = info.name || ""
+              if (email) {
+                await input.client.auth.set({
+                  path: { id: providerName },
+                  body: {
+                    type: "oauth",
+                    refresh: auth.refresh,
+                    access: auth.access,
+                    expires: auth.expires,
+                    email,
+                    name,
+                    usage: (auth as any).usage || undefined,
+                  } as any,
+                })
               }
-            } catch (e) {
-              console.error("Failed to fetch userinfo in loader init:", e)
             }
+          } catch (e) {
+            console.error("Failed to fetch userinfo in loader init:", e)
           }
         }
 
