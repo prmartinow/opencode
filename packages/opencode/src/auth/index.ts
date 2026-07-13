@@ -20,6 +20,7 @@ export class Oauth extends Schema.Class<Oauth>("OAuth")({
   enterpriseUrl: Schema.optional(Schema.String),
   email: Schema.optional(Schema.String),
   name: Schema.optional(Schema.String),
+  usage: Schema.optional(Schema.Unknown),
 }) {}
 
 export class Api extends Schema.Class<Api>("ApiAuth")({
