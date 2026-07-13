@@ -460,12 +460,9 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
           const now = Date.now()
           if (now - lastFetched > 15000 && !pendingQuotaFetches.has(activeAccess)) {
             pendingQuotaFetches.add(activeAccess)
-            console.log(`[Gemini Quota ${providerName}] Triggering fetch for activeAccess: ${activeAccess.substring(0, 20)}...`)
             fetchUserQuotaSummary(activeAccess)
               .then(async (summary) => {
-                console.log(`[Gemini Quota ${providerName}] Fetch successful. Groups count:`, summary?.groups?.length)
                 const latestAuth = await getAuth()
-                console.log(`[Gemini Quota ${providerName}] Comparison - activeAccess: ${activeAccess.substring(0, 20)}..., latestAuth.access: ${(latestAuth as any).access?.substring(0, 20)}...`)
                 if (latestAuth.type === "oauth" && latestAuth.access === activeAccess) {
                   await input.client.auth.set({
                     path: { id: providerName },
@@ -482,9 +479,6 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                       },
                     } as any,
                   })
-                  console.log(`[Gemini Quota ${providerName}] Successfully saved usage to client auth database.`)
-                } else {
-                  console.log(`[Gemini Quota ${providerName}] Access token mismatch or not oauth. Not saving.`)
                 }
               })
               .catch((err) => {
