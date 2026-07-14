@@ -230,13 +230,13 @@ async function fetchUserQuotaSummary(accessToken: string): Promise<any> {
  * Google OAuth 2.0 forbids private/internal LAN IP addresses (like 192.168.2.251)
  * as redirect URIs unless they are loopback/localhost.
  * To satisfy Google's validation, we always return a localhost address with the
- * server's running port (extracted from OPENCODE_OAUTH_BASE_URL or defaulting to 18790).
+ * server's running port (extracted from ANTIGRAVITY_OAUTH_BASE_URL or defaulting to 18790).
  */
 export function getGeminiRedirectBase(): string {
   let port = "18790"
-  if (process.env.OPENCODE_OAUTH_BASE_URL) {
+  if (process.env.ANTIGRAVITY_OAUTH_BASE_URL) {
     try {
-      const url = new URL(process.env.OPENCODE_OAUTH_BASE_URL)
+      const url = new URL(process.env.ANTIGRAVITY_OAUTH_BASE_URL)
       if (url.port) port = url.port
     } catch (e) {}
   }
