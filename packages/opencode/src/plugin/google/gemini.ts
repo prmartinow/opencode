@@ -704,6 +704,18 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                     } else {
                       mappedModel = "gemini-3.5-flash-low";
                     }
+                  } else if (originalModel === "gemini-3.6-flash") {
+                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
+                    if (level === "low") {
+                      mappedModel = "gemini-3.6-flash-extra-low";
+                    } else if (level === "high") {
+                      mappedModel = "gemini-3.6-flash-high";
+                    } else {
+                      mappedModel = "gemini-3.6-flash-low";
+                    }
+                  } else if (/^gemini-\d+\.\d+-flash$/i.test(originalModel)) {
+                    const level = parsedRequest?.thinkingConfig?.thinkingLevel || "low";
+                    mappedModel = `${originalModel}-${level}`;
                   } else if (originalModel === "gemini-3.1-pro") {
                     const level = parsedRequest?.thinkingConfig?.thinkingLevel;
                     if (level === "high") {

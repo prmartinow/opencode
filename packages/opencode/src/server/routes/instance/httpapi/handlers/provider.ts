@@ -48,6 +48,19 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         env: [],
         npm: "@ai-sdk/google",
         models: {
+          "gemini-3.6-flash": {
+            id: "gemini-3.6-flash",
+            name: "Gemini 3.6 Flash",
+            family: "gemini-3.6-flash",
+            release_date: "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: { context: 1048576, output: 65535 },
+            modalities: { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          },
           "gemini-3.5-flash": {
             id: "gemini-3.5-flash",
             name: "Gemini 3.5 Flash",
@@ -115,6 +128,33 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
           }
         }
       } as any
+
+      const dynamicGeminiModels: Record<string, any> = {}
+      const googleSourceModels = {
+        ...(all.google?.models || {}),
+        ...(all.gemini?.models || {})
+      }
+      for (const [mId, mDef] of Object.entries(googleSourceModels)) {
+        if (mId.startsWith("gemini-") && !(geminiBase.models as any)[mId]) {
+          dynamicGeminiModels[mId] = {
+            id: mId,
+            name: (mDef as any).name || mId,
+            family: mId,
+            release_date: (mDef as any).release_date || "",
+            attachment: true,
+            reasoning: true,
+            temperature: true,
+            tool_call: true,
+            limit: (mDef as any).limit || { context: 1048576, output: 65535 },
+            modalities: (mDef as any).modalities || { input: ["text"], output: ["text"] },
+            provider: { npm: "@ai-sdk/google" }
+          }
+        }
+      }
+      geminiBase.models = {
+        ...geminiBase.models,
+        ...dynamicGeminiModels
+      }
 
       const extendedAll: Record<string, any> = {
         ...all,

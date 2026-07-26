@@ -687,14 +687,14 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
 
   const id = model.id.toLowerCase()
   if (model.providerID.startsWith("gemini")) {
-    if (id.includes("gemini-3.5-flash")) {
+    if (id.includes("gemini-3.5-flash") || id.includes("gemini-3.6-flash") || /gemini-\d+\.\d+-flash/.test(id)) {
       return {
         low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
         medium: { thinkingConfig: { includeThoughts: true, thinkingLevel: "medium" } },
         high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
       }
     }
-    if (id.includes("gemini-3.1-pro")) {
+    if (id.includes("gemini-3.1-pro") || /gemini-\d+(\.\d+)?-pro/.test(id)) {
       return {
         low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
         high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
