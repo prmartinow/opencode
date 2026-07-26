@@ -645,10 +645,10 @@ function anthropicOmitsThinking(apiId: string) {
 
 function googleThinkingLevelEfforts(apiId: string) {
   const id = apiId.toLowerCase()
-  if (!id.includes("gemini-3")) return ["low", "high"]
   if (id.includes("flash-image")) return ["minimal", "high"]
   if (id.includes("pro-image")) return ["high"]
   if (id.includes("flash")) return ["minimal", "low", "medium", "high"]
+  if (id.includes("pro")) return ["low", "high"]
   return ["low", "medium", "high"]
 }
 
@@ -687,25 +687,13 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
 
   const id = model.id.toLowerCase()
   if (model.providerID.startsWith("gemini")) {
-    if (id.includes("gemini-3.5-flash") || id.includes("gemini-3.6-flash") || /gemini-\d+\.\d+-flash/.test(id)) {
-      return {
-        low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
-        medium: { thinkingConfig: { includeThoughts: true, thinkingLevel: "medium" } },
-        high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
-      }
-    }
-    if (id.includes("gemini-3.1-pro") || /gemini-\d+(\.\d+)?-pro/.test(id)) {
-      return {
-        low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
-        high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
-      }
-    }
     if (id.includes("claude-sonnet-4-6") || id.includes("claude-opus-4-6-thinking")) {
       return {
         low: { thinkingConfig: { includeThoughts: true, thinkingLevel: "low" } },
         high: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } }
       }
     }
+    return googleThinkingVariants(model)
   }
   const glm52 = ["glm-5.2", "glm-5-2", "glm-5p2"].some(
     (name) => id.includes(name) || model.api.id.toLowerCase().includes(name),
