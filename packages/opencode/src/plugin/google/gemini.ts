@@ -693,42 +693,8 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                     }
                   }
                   
-                  // Map the single model IDs to the specific reasoning-tier model IDs on the gateway
-                  let mappedModel = originalModel;
-                  if (originalModel === "gemini-3.5-flash") {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "low") {
-                      mappedModel = "gemini-3.5-flash-extra-low";
-                    } else if (level === "high") {
-                      mappedModel = "gemini-3-flash-agent";
-                    } else {
-                      mappedModel = "gemini-3.5-flash-low";
-                    }
-                  } else if (originalModel === "gemini-3.6-flash") {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "low") {
-                      mappedModel = "gemini-3.6-flash-extra-low";
-                    } else if (level === "high") {
-                      mappedModel = "gemini-3.6-flash-high";
-                    } else {
-                      mappedModel = "gemini-3.6-flash-low";
-                    }
-                  } else if (/^gemini-\d+\.\d+-flash$/i.test(originalModel)) {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel || "low";
-                    mappedModel = `${originalModel}-${level}`;
-                  } else if (originalModel === "gemini-3.1-pro") {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "high") {
-                      mappedModel = "gemini-3.1-pro-high";
-                    } else {
-                      mappedModel = "gemini-3.1-pro-low";
-                    }
-                  }
-                  
-                  // Strip thinkingConfig from request body for gemini models, since the gateway handles reasoning levels via the model ID
-                  if (originalModel.startsWith("gemini-") && parsedRequest?.thinkingConfig) {
-                    delete parsedRequest.thinkingConfig;
-                  }
+                  // Pass model ID and native thinkingConfig directly to the gateway
+                  const mappedModel = originalModel;
 
                   // Inject functionCall and functionResponse IDs if missing (required for Anthropic translation on the gateway)
                   if (parsedRequest?.contents && Array.isArray(parsedRequest.contents)) {
