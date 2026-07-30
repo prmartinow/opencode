@@ -693,13 +693,13 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                     }
                   }
                   
-                  // Pass the native reasoning level name directly to the gateway model ID
+                  // Pass the native reasoning level name directly to the gateway model ID (defaulting to low to prevent raw model 404s)
                   let mappedModel = originalModel;
                   if (originalModel.startsWith("gemini-")) {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
+                    const level = parsedRequest?.thinkingConfig?.thinkingLevel || "low";
                     if (originalModel === "gemini-3.5-flash" && level === "high") {
                       mappedModel = "gemini-3-flash-agent";
-                    } else if (level) {
+                    } else {
                       mappedModel = `${originalModel}-${level}`;
                     }
                   }
