@@ -693,35 +693,26 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                     }
                   }
                   
-                  // Map the single model IDs to the specific reasoning-tier model IDs on the gateway
+                  // Map native API thinkingLevel parameters directly to Cloud Code gateway model IDs
                   let mappedModel = originalModel;
-                  if (originalModel === "gemini-3.5-flash") {
+                  if (originalModel.startsWith("gemini-")) {
                     const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "low") {
-                      mappedModel = "gemini-3.5-flash-extra-low";
-                    } else if (level === "high") {
+                    const l = (level || "low").toLowerCase();
+                    let suffix = "low";
+                    if (["minimal", "extra-low", "extra_low", "ultralow", "none"].includes(l)) {
+                      suffix = "extra-low";
+                    } else if (["high", "xhigh", "max", "maximum", "agent"].includes(l)) {
+                      suffix = "high";
+                    } else if (["low", "medium", "standard"].includes(l)) {
+                      suffix = "low";
+                    } else {
+                      suffix = l.replace(/[^a-z0-9_-]/g, "");
+                    }
+
+                    if (originalModel === "gemini-3.5-flash" && suffix === "high") {
                       mappedModel = "gemini-3-flash-agent";
                     } else {
-                      mappedModel = "gemini-3.5-flash-low";
-                    }
-                  } else if (originalModel === "gemini-3.6-flash") {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "low") {
-                      mappedModel = "gemini-3.6-flash-extra-low";
-                    } else if (level === "high") {
-                      mappedModel = "gemini-3.6-flash-high";
-                    } else {
-                      mappedModel = "gemini-3.6-flash-low";
-                    }
-                  } else if (/^gemini-\d+\.\d+-flash$/i.test(originalModel)) {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel || "low";
-                    mappedModel = `${originalModel}-${level}`;
-                  } else if (originalModel === "gemini-3.1-pro") {
-                    const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    if (level === "high") {
-                      mappedModel = "gemini-3.1-pro-high";
-                    } else {
-                      mappedModel = "gemini-3.1-pro-low";
+                      mappedModel = `${originalModel}-${suffix}`;
                     }
                   }
                   
