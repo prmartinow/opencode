@@ -693,26 +693,14 @@ export async function GeminiAuthPlugin(input: PluginInput, options?: Record<stri
                     }
                   }
                   
-                  // Map native API thinkingLevel parameters directly to Cloud Code gateway model IDs
+                  // Pass the native reasoning level name directly to the gateway model ID
                   let mappedModel = originalModel;
                   if (originalModel.startsWith("gemini-")) {
                     const level = parsedRequest?.thinkingConfig?.thinkingLevel;
-                    const l = (level || "low").toLowerCase();
-                    let suffix = "low";
-                    if (["minimal", "extra-low", "extra_low", "ultralow", "none"].includes(l)) {
-                      suffix = "extra-low";
-                    } else if (["high", "xhigh", "max", "maximum", "agent"].includes(l)) {
-                      suffix = "high";
-                    } else if (["low", "medium", "standard"].includes(l)) {
-                      suffix = "low";
-                    } else {
-                      suffix = l.replace(/[^a-z0-9_-]/g, "");
-                    }
-
-                    if (originalModel === "gemini-3.5-flash" && suffix === "high") {
+                    if (originalModel === "gemini-3.5-flash" && level === "high") {
                       mappedModel = "gemini-3-flash-agent";
-                    } else {
-                      mappedModel = `${originalModel}-${suffix}`;
+                    } else if (level) {
+                      mappedModel = `${originalModel}-${level}`;
                     }
                   }
                   
