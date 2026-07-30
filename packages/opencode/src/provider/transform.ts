@@ -645,9 +645,9 @@ function anthropicOmitsThinking(apiId: string) {
 
 function googleThinkingLevelEfforts(apiId: string) {
   const id = apiId.toLowerCase()
-  if (id.includes("flash-image")) return ["minimal", "high"]
+  if (id.includes("flash-image")) return ["low", "high"]
   if (id.includes("pro-image")) return ["high"]
-  if (id.includes("flash")) return ["minimal", "low", "medium", "high"]
+  if (id.includes("flash")) return ["low", "medium", "high"]
   if (id.includes("pro")) return ["low", "high"]
   return ["low", "medium", "high"]
 }
